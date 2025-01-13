@@ -1,0 +1,1 @@
+@pyxel play %1
