@@ -1,0 +1,1 @@
+@for %%i in (*.html) do @del %%i

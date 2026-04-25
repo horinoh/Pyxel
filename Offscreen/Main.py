@@ -20,7 +20,7 @@ class App:
         # バックバッファの準備
         self.Backbuffer = pyxel.Image(pyxel.width, pyxel.height)
         
-        self.IsRaster = False
+        self.IsRaster = True
 
         # 更新、描画関数を指定して実行
         pyxel.run(self.update, self.draw)
