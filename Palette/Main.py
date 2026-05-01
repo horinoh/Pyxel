@@ -35,11 +35,11 @@ class App:
             # 背景色 0 へパレット 0 をセット
             pyxel.pal(col1 = 0, col2 = 0)
         if pyxel.btnp(pyxel.GAMEPAD1_BUTTON_X) or pyxel.btnp(pyxel.KEY_X):
-              # パレットの色を「ランダム」に書き換える
+            # パレットの色を「ランダム」に書き換える
             for i in range(len(pyxel.colors)):
                 pyxel.colors[i] = (random.randint(0x0, 0xff) << 16) | (random.randint(0x0, 0xff) << 8) | (random.randint(0x0, 0xff) << 0)
         if pyxel.btnp(pyxel.GAMEPAD1_BUTTON_Y) or pyxel.btnp(pyxel.KEY_Y):
-              # パレットの色を「グレースケール」に書き換える
+            # パレットの色を「グレースケール」に書き換える
             for i in range(len(pyxel.colors)):
                 pyxel.colors[i] = i * 0x101010
 
