@@ -9,26 +9,25 @@ class Shape:
 class ConvexBase(Shape):
     def __init__(self):
         super().__init__()
-        self.vertices = []
-        self.indices = []
+        self.Vertices = []
+        self.Indices = []
     def __del__(self):
         super().__del__()
 
 class ShapeBox(ConvexBase):
     def __init__(self):
         super().__init__()
-        R = 0.5
-        self.vertices = [
-            glm.vec3(R),
-            glm.vec3(R, R, -R),
-            glm.vec3(R, -R, R),
-            glm.vec3(R, -R, -R),
-            glm.vec3(-R, R, R),
-            glm.vec3(-R, R, -R),
-            glm.vec3(-R, -R, R),
-            glm.vec3(-R),
+        self.Vertices = [
+            glm.vec3(0.5),
+            glm.vec3(0.5, 0.5, -0.5),
+            glm.vec3(0.5, -0.5, 0.5),
+            glm.vec3(0.5, -0.5, -0.5),
+            glm.vec3(-0.5, 0.5, 0.5),
+            glm.vec3(-0.5, 0.5, -0.5),
+            glm.vec3(-0.5, -0.5, 0.5),
+            glm.vec3(-0.5),
         ]
-        self.indices = [
+        self.Indices = [
             0, 1, 2, 1, 3, 2,   # right
             4, 6, 5, 5, 6, 7,   # left
             0, 2, 4, 2, 6, 4,   # front
