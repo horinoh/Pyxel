@@ -19,8 +19,8 @@ class App:
         
         # フォントを使用する場合
         self.Font = None
-        #self.Font = umplus10 = pyxel.Font("umplus_j10r.bdf")
-        #self.Font = umplus10 = pyxel.Font("umplus_j12r.bdf")
+        #self.Font = umplus10 = pyxel.Font("../Assets/umplus_j10r.bdf")
+        #self.Font = umplus10 = pyxel.Font("../Assets/umplus_j12r.bdf")
 
         # 更新、描画関数を指定して実行
         pyxel.run(self.update, self.draw)

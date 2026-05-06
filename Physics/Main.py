@@ -8,7 +8,9 @@
 import pyxel
 from pyglm import glm
 
+import LibPhysics.Scene
 import LibPhysics.Shape
+import LibPhysics.RigidBody
 
 LIGHT_BLUE = 0x87CEEB
 
@@ -37,36 +39,31 @@ class App:
         self.CamXAngle = 0.0
         self.CamYAngle = 20.0
         self.CamRadius = 30.0
-        self.CamPos = glm.vec3(self.CamRadius * glm.sin(glm.radians(self.CamXAngle)), self.CamRadius * glm.sin(glm.radians(self.CamYAngle)), self.CamRadius * glm.cos(glm.radians(self.CamXAngle)))
         self.CamTag = glm.vec3(0.0, 0.0, 0.0)
         self.CamUp = glm.vec3(0.0, 1.0, 0.0)
-        self.View = glm.lookAt(self.CamPos, self.CamTag, self.CamUp)
-
-        self.ViewProjection = self.Projection * self.View
+        self.View = None
 
         self.HalfWidth = pyxel.width // 2
         self.HalfHeight = pyxel.height // 2
     
-        # 平面
-        self.FloorVertices = [
-            glm.vec3(-0.5, 0.0, -0.5),
-            glm.vec3(0.5, 0.0, -0.5),
-            glm.vec3(0.5, 0.0, 0.5),
-            glm.vec3(-0.5, 0.0, 0.5),
-        ]
-        self.FloorIndices = [
-            0, 1, 2,
-            0, 2, 3,
-        ]
-        w = glm.mat4(1.0)
-        w = glm.translate(w, glm.vec3(0.0, -5.0, 0.0))
-        w = glm.scale(w, glm.vec3(20.0))
-        self.FloorWorld = w
+        # シーン
+        self.Scene = LibPhysics.Scene.Scene()
+        floor = LibPhysics.Shape.ShapeBox(glm.vec3(20.0, 1.0, 20.0))
+        self.Scene.Shapes.append(floor)
+        rb = LibPhysics.RigidBody.RigidBody(floor, 0.0)
+        rb.Position = glm.vec3(0.0, -0.5, 0.0)
+        self.Scene.RigidBodies.append(rb)
 
-        # 立方体
-        self.Box = LibPhysics.Shape.ShapeBox()
-        # トランスフォーム
-        self.World = [ glm.mat4(1.0) for _ in range(1) ]
+        box = LibPhysics.Shape.ShapeBox()
+        self.Scene.Shapes.append(box)
+        ofs = 1.5; ny = 3; nx = 3; nz = 3
+        for i in range(ny):
+            for j in range(nx):
+                for k in range(nz):
+                    rb = LibPhysics.RigidBody.RigidBody(box, 1.0)
+                    rb.Position = glm.vec3(ofs * j - ofs * (nx - 1) * 0.5, ofs * i + 5.0, ofs * k - ofs * (nz - 1) * 0.5)
+                    #rb.Velocity_Angular = glm.vec3(0, 0, glm.radians(40))
+                    self.Scene.RigidBodies.append(rb)
 
         # ライトの方向
         self.LightDirection = glm.normalize(glm.vec3(0.0, 1.0, 1.0))
@@ -138,22 +135,20 @@ class App:
 
     # 更新関数
     def update(self):
-        self.cameraControl()
-        
-        # ワールド変換行列の更新
-        for i in range(len(self.World)):
-            w = glm.mat4(1.0)
-            w = glm.translate(w, glm.vec3(0, 5.0, 0.0))
-            w = glm.rotate(w, glm.radians(pyxel.frame_count % 360), glm.vec3(1.0, 0.0, 0.0))
-            w = glm.rotate(w, glm.radians(pyxel.frame_count % 360), glm.vec3(0.0, 1.0, 0.0))
-            w = glm.rotate(w, glm.radians(pyxel.frame_count % 360), glm.vec3(0.0, 0.0, 1.0))
-            w = glm.scale(w, glm.vec3(2.0))
-            self.World[i] = w
+        self.cameraControl()       
+
+        self.Scene.Update(1.0 / 60.0)
 
         self.Screened.clear()
-        self.drawMesh(self.FloorVertices, self.FloorIndices, self.FloorWorld)
-        for i in range(len(self.World)):
-            self.drawMesh(self.Box.Vertices, self.Box.Indices, self.World[i])
+
+        for i in range(len(self.Scene.RigidBodies)):
+            rb = self.Scene.RigidBodies[i]
+
+            w = glm.mat4(1.0)
+            w = glm.translate(w, rb.Position)
+            w = glm.mul(w, glm.mat4(rb.Rotation))
+            
+            self.drawMesh(rb.Shape.Vertices, rb.Shape.Indices, w)
 
         # z座標でソート（遠い順）
         self.Screened.sort(key = lambda tri: tri[0].z + tri[1].z + tri[2].z, reverse = True)
@@ -167,6 +162,5 @@ class App:
             c = int(v0.w * 14) + 1
             pyxel.tri(v0.x, v0.y, v1.x, v1.y, v2.x, v2.y, c)
             #pyxel.line(v0.x, v0.y, v1.x, v1.y, c); pyxel.line(v1.x, v1.y, v2.x, v2.y, c); pyxel.line(v2.x, v2.y, v0.x, v0.y, c)
-            #pyxel.text(x = v0.x, y = v0.y, s = "{:.5f}".format(v0.z), col = 14); pyxel.text(x = v1.x, y = v1.y, s = "{:.5f}".format(v1.z), col = 14); pyxel.text(x = v2.x, y = v2.y, s = "{:.5f}".format(v2.z), col = 14)
 
 App()

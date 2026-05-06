@@ -14,7 +14,7 @@ class App:
     def __init__(self):
         pyxel.init(width = 320, height = 240, title = "3D", fps = 60)
         
-        pyxel.images[0].load(x = 0, y = 0, filename = "../noguchi_128x128.png")
+        pyxel.images[0].load(x = 0, y = 0, filename = "../Assets/noguchi_128x128.png")
 
         # パレットを初期状態
         pyxel.pal()
@@ -37,22 +37,19 @@ class App:
         self.CamXAngle = 0.0
         self.CamYAngle = 20.0
         self.CamRadius = 30.0
-        self.CamPos = glm.vec3(self.CamRadius * glm.sin(glm.radians(self.CamXAngle)), self.CamRadius * glm.sin(glm.radians(self.CamYAngle)), self.CamRadius * glm.cos(glm.radians(self.CamXAngle)))
         self.CamTag = glm.vec3(0.0, 0.0, 0.0)
         self.CamUp = glm.vec3(0.0, 1.0, 0.0)
-        self.View = glm.lookAt(self.CamPos, self.CamTag, self.CamUp)
-
-        self.ViewProjection = self.Projection * self.View
+        self.View = None
 
         self.HalfWidth = pyxel.width // 2
         self.HalfHeight = pyxel.height // 2
         # ビューポート変換行列
-        self.Viewport = glm.mat4(
-             [self.HalfWidth, 0.0, 0.0, 0.0],
-             [0.0, -self.HalfHeight, 0.0, 0.0],
-             [0.0, 0.0, 1.0, 0.0],
-             [self.HalfWidth, self.HalfHeight, 0.0, 1.0]
-        )
+        # self.Viewport = glm.mat4(
+        #      [self.HalfWidth, 0.0, 0.0, 0.0],
+        #      [0.0, -self.HalfHeight, 0.0, 0.0],
+        #      [0.0, 0.0, 1.0, 0.0],
+        #      [self.HalfWidth, self.HalfHeight, 0.0, 1.0]
+        # )
 
         # 平面
         self.FloorVertices = [
@@ -185,8 +182,8 @@ class App:
             self.drawMesh(self.BoxVertices, self.BoxIndices, self.World[i])
        
         # z座標でソート（遠い順）
-        #self.Screened.sort(key = lambda tri: (tri[0].z + tri[1].z + tri[2].z) / 3, reverse = True)
         self.Screened.sort(key = lambda tri: tri[0].z + tri[1].z + tri[2].z, reverse = True)
+        #self.Screened.sort(key = lambda tri: max(tri[0].z, tri[1].z, tri[2].z), reverse = True)
 
     # 描画関数
     def draw(self):

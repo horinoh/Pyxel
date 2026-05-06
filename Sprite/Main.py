@@ -29,7 +29,7 @@ class App:
         pyxel.init(width = 320, height = 240, title = "Sprite", fps = 60)
         
         # 画像読み込み (images[0, 2])
-        pyxel.images[0].load(x = 0, y = 0, filename = "../noguchi_128x128.png")
+        pyxel.images[0].load(x = 0, y = 0, filename = "../Assets/noguchi_128x128.png")
 
         # パレットを初期状態
         pyxel.pal()
