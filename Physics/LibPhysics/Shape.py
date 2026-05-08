@@ -24,6 +24,10 @@ class Shape:
         return glm.vec3(0.0)
     def CalcInertiaTensor(self):
         return glm.mat3(1.0)
+    def GetSupportPoint(self, pos, rot, uDir, bias):
+        return None
+    def GetFastestRotatingPointSpeed(self, angVel, uDir):
+        return 0.0
 
 class ConvexBase(Shape):
     def __init__(self):
@@ -46,7 +50,19 @@ class ConvexBase(Shape):
             ys.append(i.y)
             zs.append(i.z)
         return glm.vec3(max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs))
+
+    def GetSupportPoint(self, pos, rot, uDir, bias):
+        points = []
+        for i in self.Vertices:
+            points.append(rot * i + pos)
+        return max(points, key = lambda rhs: glm.dot(uDir, rhs)) + uDir * bias
     
+    def GetFastestRotatingPointSpeed(self, angVel, uDir):
+        speeds = []
+        for i in self.Vertices:
+            speeds.append(glm.dot(uDir, glm.cross(angVel, i - self.CenterOfMass)))
+        return max(speeds)
+
 class ShapeBox(ConvexBase):
     def __init__(self, ext = glm.vec3(1.0)):
         x = ext.x * 0.5

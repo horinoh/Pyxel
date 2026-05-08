@@ -11,6 +11,7 @@ from pyglm import glm
 import LibPhysics.Scene
 import LibPhysics.Shape
 import LibPhysics.RigidBody
+import LibPhysics.Collision
 
 LIGHT_BLUE = 0x87CEEB
 
@@ -70,6 +71,8 @@ class App:
 
         self.Transformed = []
         self.Screened = []
+
+        LibPhysics.Collision.SignedVolumeTest()
 
         # 更新、描画関数を指定して実行
         pyxel.run(self.update, self.draw)
@@ -146,7 +149,7 @@ class App:
 
             w = glm.mat4(1.0)
             w = glm.translate(w, rb.Position)
-            w = glm.mul(w, glm.mat4(rb.Rotation))
+            w = w * glm.mat4(rb.Rotation)
             
             self.drawMesh(rb.Shape.Vertices, rb.Shape.Indices, w)
 

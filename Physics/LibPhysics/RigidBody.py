@@ -26,15 +26,12 @@ class RigidBody:
     def GetCenterOfMass(self):
         return self.Shape.CenterOfMass
     def GetCenterOfMass_World(self):
-        return self.Position + RigidBody.Rotate(self.Rotation, self.GetCenterOfMass())
+        return self.Position + self.Rotation * self.GetCenterOfMass()
     
-    def Rotate(quat, rhs):
-        return quat * rhs
-
     def ToLocal(self, rhs, center):
-        return self.Rotate(rhs - center)
+        return self.Rotation * (rhs - center)
     def ToWorld(self, rhs, center):
-        return self.Rotate(rhs) + center
+        return self.Rotation * rhs + center
     def ToLocalPos(self, rhs):
         return self.ToLocal(rhs, self.GetCenterOfMass_World())
     def ToWorldPos(self, rhs):
@@ -123,7 +120,7 @@ class RigidBody:
         self.Rotation = glm.normalize(deltaQuat * self.Rotation)
 
         centerOfMass = self.GetCenterOfMass_World()
-        self.Position = centerOfMass + RigidBody.Rotate(deltaQuat, self.Position - centerOfMass)
+        self.Position = centerOfMass + deltaQuat * (self.Position - centerOfMass)
 
         #print(f"pos={self.Position}")
         #print(f"lvel={self.Velocity_Linear}")
