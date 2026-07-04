@@ -50,14 +50,15 @@ class App:
         # シーン
         self.Scene = LibPhysics.Scene.Scene()
         floor = LibPhysics.Shape.ShapeBox(glm.vec3(20.0, 1.0, 20.0))
+        # 床
         self.Scene.Shapes.append(floor)
         rb = LibPhysics.RigidBody.RigidBody(floor, 0.0)
         rb.Position = glm.vec3(0.0, -0.5, 0.0)
         self.Scene.RigidBodies.append(rb)
-
+        # ボックス
         box = LibPhysics.Shape.ShapeBox()
         self.Scene.Shapes.append(box)
-        ofs = 1.5; ny = 3; nx = 3; nz = 3
+        ofs = 1.5; ny = 2; nx = 2; nz = 2
         for i in range(ny):
             for j in range(nx):
                 for k in range(nz):
@@ -66,18 +67,31 @@ class App:
                     #rb.Velocity_Angular = glm.vec3(0, 0, glm.radians(40))
                     self.Scene.RigidBodies.append(rb)
 
+        self.ctrlBox = LibPhysics.RigidBody.RigidBody(box, 1.0)
+        self.ctrlBox.Position = glm.vec3(0.0, 10.0, 0.0)
+        self.Scene.RigidBodies.append(self.ctrlBox)
+
         # ライトの方向
         self.LightDirection = glm.normalize(glm.vec3(0.0, 1.0, 1.0))
 
-        self.Transformed = []
-        self.Screened = []
+        self.ScreenedTris = []
+        self.ScreenedPts = []
 
-        LibPhysics.Collision.SignedVolumeTest()
+        self.Pause = False
+
+        # テスト
+        LibPhysics.Collision.Test()
 
         # 更新、描画関数を指定して実行
         pyxel.run(self.update, self.draw)
     
-    def cameraControl(self):
+    # 入力
+    def inputControl(self):
+        # ポーズ
+        if pyxel.btnp(pyxel.GAMEPAD1_BUTTON_START) or pyxel.btnp(pyxel.KEY_SPACE):
+            self.Pause = not self.Pause
+
+        # カメラ
         if pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_UP, hold = 1, repeat = 1) or pyxel.btnp(pyxel.KEY_W, hold = 1, repeat = 1):
             self.CamYAngle += 1.0
         if pyxel.btnp(pyxel.GAMEPAD1_BUTTON_DPAD_DOWN, hold = 1, repeat = 1) or pyxel.btnp(pyxel.KEY_S, hold = 1, repeat = 1):
@@ -92,6 +106,16 @@ class App:
         self.View = glm.lookAt(self.CamPos, self.CamTag, self.CamUp)        
         self.ViewProjection = self.Projection * self.View
 
+        if pyxel.btnp(pyxel.GAMEPAD1_BUTTON_A, hold = 1, repeat = 1) or pyxel.btnp(pyxel.KEY_DOWN, hold = 1, repeat = 1):
+            self.ctrlBox.Position += glm.vec3(0.0, -1.0, 0.0) * 0.1
+        if pyxel.btnp(pyxel.GAMEPAD1_BUTTON_B, hold = 1, repeat = 1) or pyxel.btnp(pyxel.KEY_UP, hold = 1, repeat = 1):
+            self.ctrlBox.Position += glm.vec3(0.0, 1.0, 0.0) * 0.1
+        if pyxel.btnp(pyxel.GAMEPAD1_BUTTON_X, hold = 1, repeat = 1) or pyxel.btnp(pyxel.KEY_LEFT, hold = 1, repeat = 1):
+            self.ctrlBox.Rotation = glm.angleAxis(glm.radians(1.0), glm.vec3(1.0, 0.0, 0.0)) * self.ctrlBox.Rotation
+        if pyxel.btnp(pyxel.GAMEPAD1_BUTTON_Y, hold = 1, repeat = 1) or pyxel.btnp(pyxel.KEY_RIGHT, hold = 1, repeat = 1):
+            self.ctrlBox.Rotation = glm.angleAxis(glm.radians(-1.0), glm.vec3(1.0, 0.0, 0.0)) * self.ctrlBox.Rotation
+
+    # メッシュ描画用の変換
     def drawMesh(self, vertices, indices, World):
         vpw = self.ViewProjection * World
         vw = self.View * World
@@ -134,16 +158,30 @@ class App:
 
             # 明るさをw成分に格納
             sc0.w = LN
-            self.Screened.append((sc0, sc1, sc2))
+            self.ScreenedTris.append((sc0, sc1, sc2))
+
+    def drawPoints(self, vertices):
+        vp = self.ViewProjection
+        for i in vertices:
+            sv = vp * glm.vec4(i, 1.0)
+            if sv.w <= 0:
+                continue
+            sv /= sv.w
+            sv.x = self.HalfWidth * sv.x + self.HalfWidth
+            sv.y = -self.HalfHeight * sv.y + self.HalfHeight
+            self.ScreenedPts.append(sv)
 
     # 更新関数
     def update(self):
-        self.cameraControl()       
+        self.inputControl()       
 
-        self.Scene.Update(1.0 / 60.0)
+        # 物理シミュレーション
+        if not self.Pause:
+            self.Scene.Update(1.0 / 60.0)
 
-        self.Screened.clear()
-
+        # 描画用の変換
+        self.ScreenedTris.clear()
+        self.ScreenedPts.clear()
         for i in range(len(self.Scene.RigidBodies)):
             rb = self.Scene.RigidBodies[i]
 
@@ -154,16 +192,20 @@ class App:
             self.drawMesh(rb.Shape.Vertices, rb.Shape.Indices, w)
 
         # z座標でソート（遠い順）
-        self.Screened.sort(key = lambda tri: tri[0].z + tri[1].z + tri[2].z, reverse = True)
+        self.ScreenedTris.sort(key = lambda tri: tri[0].z + tri[1].z + tri[2].z, reverse = True)
+        self.ScreenedPts.sort(key = lambda pt: pt.z, reverse = True)
 
     # 描画関数
     def draw(self):
         # 画面クリア
         pyxel.cls(col = 15)
 
-        for v0, v1, v2 in self.Screened:
+        # 描画
+        for v0, v1, v2 in self.ScreenedTris:
             c = int(v0.w * 14) + 1
             pyxel.tri(v0.x, v0.y, v1.x, v1.y, v2.x, v2.y, c)
             #pyxel.line(v0.x, v0.y, v1.x, v1.y, c); pyxel.line(v1.x, v1.y, v2.x, v2.y, c); pyxel.line(v2.x, v2.y, v0.x, v0.y, c)
 
+        for i in self.ScreenedPts:
+            pyxel.pset(i.x, i.y, 0)
 App()

@@ -92,8 +92,8 @@ class App:
         # ライトの方向
         self.LightDirection = glm.normalize(glm.vec3(0.0, 1.0, 1.0))
 
-        self.Transformed = []
-        self.Screened = []
+        self.ScreenedTris = []
+        self.ScreenedPts = []
 
         # 更新、描画関数を指定して実行
         pyxel.run(self.update, self.draw)
@@ -160,7 +160,18 @@ class App:
             sc0.w = LN
             #sc1.w = LN
             #sc2.w = LN
-            self.Screened.append((sc0, sc1, sc2))
+            self.ScreenedTris.append((sc0, sc1, sc2))
+
+    def drawPoints(self, vertices):
+        vp = self.ViewProjection
+        for i in vertices:
+            sv = vp * glm.vec4(i, 1.0)
+            if sv.w <= 0:
+                continue
+            sv /= sv.w
+            sv.x = self.HalfWidth * sv.x + self.HalfWidth
+            sv.y = -self.HalfHeight * sv.y + self.HalfHeight
+            self.ScreenedPts.append(sv)
 
     # 更新関数
     def update(self):
@@ -176,30 +187,45 @@ class App:
             w = glm.scale(w, glm.vec3(4.0))
             self.World[i] = w
 
-        self.Screened.clear()
+        self.ScreenedTris.clear()
+        self.ScreenedPts.clear()
         self.drawMesh(self.FloorVertices, self.FloorIndices, self.FloorWorld)  
         for i in range(len(self.World)):
             self.drawMesh(self.BoxVertices, self.BoxIndices, self.World[i])
        
+        self.drawPoints([
+            glm.vec3(-0.5, 0.0, -0.5) * 10.0,
+            glm.vec3(0.5, 0.0, -0.5) * 10.0,
+            glm.vec3(0.5, 0.0, 0.5) * 10.0,
+            glm.vec3(-0.5, 0.0, 0.5) * 10.0,
+        ])
+
         # z座標でソート（遠い順）
-        self.Screened.sort(key = lambda tri: tri[0].z + tri[1].z + tri[2].z, reverse = True)
-        #self.Screened.sort(key = lambda tri: max(tri[0].z, tri[1].z, tri[2].z), reverse = True)
+        self.ScreenedTris.sort(key = lambda tri: tri[0].z + tri[1].z + tri[2].z, reverse = True)
+        self.ScreenedPts.sort(key = lambda pt: pt.z, reverse = True)
 
     # 描画関数
     def draw(self):
         # 画面クリア
         pyxel.cls(col = 15)
 
-        for v0, v1, v2 in self.Screened:
+        for v0, v1, v2 in self.ScreenedTris:
             c = int(v0.w * 14) + 1
             pyxel.tri(v0.x, v0.y, v1.x, v1.y, v2.x, v2.y, c)
             #pyxel.line(v0.x, v0.y, v1.x, v1.y, c); pyxel.line(v1.x, v1.y, v2.x, v2.y, c); pyxel.line(v2.x, v2.y, v0.x, v0.y, c)
             #pyxel.text(x = v0.x, y = v0.y, s = "{:.5f}".format(v0.z), col = 14); pyxel.text(x = v1.x, y = v1.y, s = "{:.5f}".format(v1.z), col = 14); pyxel.text(x = v2.x, y = v2.y, s = "{:.5f}".format(v2.z), col = 14)
         
-            scl0 = (1 - v0.z) * 1000 * 3
-            scl1 = (1 - v1.z) * 1000 * 3
-            scl2 = (1 - v2.z) * 1000 * 3
-            pyxel.blt(x = v0.x - 2 * scl0, y = v0.y - 2 * scl0, img = 0, u = 0, v = 0, w = 8, h = 8, colkey = 0,  rotate = 0, scale = scl0)
-            pyxel.blt(x = v1.x - 2 * scl1, y = v1.y - 2 * scl1, img = 0, u = 0, v = 8, w = 8, h = 8, colkey = 0,  rotate = 0, scale = scl1)
-            pyxel.blt(x = v2.x - 2 * scl2, y = v2.y - 2 * scl2, img = 0, u = 0, v = 16, w = 8, h = 8, colkey = 0,  rotate = 0, scale = scl2)
+            #scl0 = (1 - v0.z) * 1000 * 3
+            #scl1 = (1 - v1.z) * 1000 * 3
+            #scl2 = (1 - v2.z) * 1000 * 3
+            #pyxel.blt(x = v0.x - 2 * scl0, y = v0.y - 2 * scl0, img = 0, u = 0, v = 0, w = 8, h = 8, colkey = 0,  rotate = 0, scale = scl0)
+            #pyxel.blt(x = v1.x - 2 * scl1, y = v1.y - 2 * scl1, img = 0, u = 0, v = 8, w = 8, h = 8, colkey = 0,  rotate = 0, scale = scl1)
+            #pyxel.blt(x = v2.x - 2 * scl2, y = v2.y - 2 * scl2, img = 0, u = 0, v = 16, w = 8, h = 8, colkey = 0,  rotate = 0, scale = scl2)
+        
+        for i in self.ScreenedPts:
+            #c = int(i.w * 14) + 1
+            #pyxel.pset(i.x, i.y, c)
+            scl = (1 - i.z) * 1000 * 3
+            pyxel.blt(x = i.x - 2 * scl, y = i.y - 2 * scl, img = 0, u = 0, v = 0, w = 8, h = 8, colkey = 0,  rotate = 0, scale = scl)
+
 App()

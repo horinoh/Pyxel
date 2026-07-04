@@ -23,10 +23,19 @@ class Scene:
                 rbB = self.RigidBodies[j]
                 if rbA.Mass_Inverse == 0.0 and rbB.Mass_Inverse == 0.0:
                     continue
+
                 ct = LibPhysics.Collision.Contact()
-                Contacts.append(ct)
+                if LibPhysics.Collision.ConservativeAdvance(rbA, rbB, deltaSec, ct):
+                    if ct.TimeOfImpact == 0.0:
+                        # Manifold.append(ct)
+                        None
+                    else:
+                        Contacts.append(ct)
 
         Contacts.sort(key = lambda rhs: rhs.TimeOfImpact, reverse = False)
+        
+        if len(Contacts):
+            print(len(Contacts))
 
         # SolveConstraints
 
